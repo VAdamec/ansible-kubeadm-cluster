@@ -1,3 +1,5 @@
+# DON'T USE UNTIL YOU REALY KNOW HOW IT WORKS
+
 # Ansible playbook and roles to create a simple Kubernetes cluster with kubeadm
 
 ## Goal
