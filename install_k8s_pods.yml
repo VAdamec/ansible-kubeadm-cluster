@@ -1,0 +1,12 @@
+---
+- hosts: master
+  become: true
+  gather_facts: false
+  vars_files:
+      - vars.yml
+  tasks:
+  - name: Install pods
+    command: kubectl create -f {{ item }}
+    register: pods_install
+    with_items: "{{ pods_2_install | list}}"
+    run_once: true
