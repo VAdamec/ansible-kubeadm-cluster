@@ -8,25 +8,50 @@ Provide an Ansible playbook that implements the steps described in [Installing K
 
 This playbook assumes: 
 
-* You have access to 3+ Linux machines, with either CentOS 7 or Ubuntu 16.04 installed
-* Full network connectivty exists between the machines, and the Ansible control machine (e.g. your computer)
+* Access to OpenStack
 * The machines have access to the Internet
 * You are Ansible-knowledgable, can ssh into all the machines, and can sudo with no password prompt
-* Make sure your machines are time-synchronized, and that you understand their firewall configuration and status
-* OpenStack as a target platform
-* Deploy via Terraform
+* Make sure your machines are time-synchronized
+* Deploy via Terraform to OSS
 
 ## Configuration
 
 1. Build Dockerfile
 2. Copy ssh key to actuall workspace (see ansible.cfg)
 3. Run docker
+3. Change OSS variables as needed
 4. Start OSS stack
+
+## Components
+- 3 instances with docker 1.11.2 and overlay storage driver
+ - 1x master
+ - 2x node
+
+# Spin up stack
+
+```bash
+## Clone repozitory:
+[root@workstation ]# git clone https://github.com/VAdamec/ansible-kubeadm-cluster
+
+# Run Docker
+[root@workstation ]# docker build . -t kubernetes-stack
+[root@workstation ]# docker run -v `pwd`:/code -ti kubernetes-stack /bin/bash
+
+## Rename sample variables and add your credentials
+[root@container /]# cd /code
+[root@container code]# mv variables.sample variables.tf
+[root@container code]# vi variables.tf
+[root@container code]# terraform plan
+[root@container code]# terraform apply
+
+## Destroy stack
+[root@container code]# terraform detroy
+```
 
 After you have done this, you should be able to succesfully execute something like this:
 
 ```
-    ansible -m ping -i YOUR-INVENTORY-FILE cluster
+    ansible -m ping -i ./terraform.py all
 ```
 
 And your master and node machines should respond.  Don't bother proceeding until this works!
@@ -36,7 +61,7 @@ And your master and node machines should respond.  Don't bother proceeding until
 When you are ready to proceed, run:
 
 ```
-    ansible-playbook cluster.yml -i YOUR-INVENTORY-FILE
+    ansible-playbook cluster.yml -i ./terraform.py
 ```
 
 This should execute/implement all four installation steps in the aforementioned installation guide.
