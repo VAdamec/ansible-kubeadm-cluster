@@ -1,0 +1,29 @@
+variable "openstack_user_name" {
+    description = "The username for the Tenant."
+    default  = "<YOUR_OSS_LOGIN>"
+}
+
+variable "openstack_tenant_name" {
+    description = "The name of the Tenant."
+    default  = "DEV"
+}
+
+variable "openstack_password" {
+    description = "The password for the Tenant."
+    default  = "<YOUR_OSS_PASSWORD>"
+}
+
+variable "openstack_auth_url" {
+    description = "The endpoint url to connect to OpenStack."
+    default  = "http://xxx.xxx.xxx.xxx:xxxx/v2.0"
+}
+
+variable "openstack_keypair" {
+    description = "The keypair to be used."
+    default  = "<YOUR_OSS_KEYPAIRNAME>"
+}
+
+variable "tenant_network" {
+    description = "The network to be used."
+    default  = "demo"
+}
