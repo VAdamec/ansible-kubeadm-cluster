@@ -11,11 +11,11 @@
 
     - name: Adding dynamic group of masters
       add_host: name={{ item }} groups=master
-      with_lines: ansible -i ./terraform.py all -m shell -a "hostname" --list -l '~devops-kubestack-master*' | grep 172 | sed -e 's/^[ \t]*//g'
+      with_lines: ansible -i ./terraform.py all -m shell -a "hostname" --list -l '~*master*' | grep 172 | sed -e 's/^[ \t]*//g'
 
     - name: Adding dynamic group of nodes
       add_host: name={{ item }} groups=nodes
-      with_lines: ansible -i ./terraform.py all -m shell -a "hostname" --list -l '~devops-kubestack-node*' | grep 172 | sed -e 's/^[ \t]*//g'
+      with_lines: ansible -i ./terraform.py all -m shell -a "hostname" --list -l '~*node*' | grep 172 | sed -e 's/^[ \t]*//g'
 
     - name: Store Master IP address
       set_fact:
