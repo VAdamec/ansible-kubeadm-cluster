@@ -1,0 +1,5 @@
+- name: Copy admin.conf to local remotes/
+  fetch:
+    src: /etc/kubernetes/admin.conf
+    dest: remotes/{{ cluster_name }}.conf
+    flat: true
