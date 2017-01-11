@@ -13,14 +13,15 @@ This playbook assumes:
 * The machines have access to the Internet
 * You are Ansible-knowledgable, can ssh into all the machines, and can sudo with no password prompt
 * Make sure your machines are time-synchronized, and that you understand their firewall configuration and status
+* OpenStack as a target platform
+* Deploy via Terraform
 
 ## Configuration
 
-1. Copy, rename, and edit the file INVENTORY-EXAMPLE
-2. Enter the FQDN of the machine assigned the role of Kubernetes master in the ```[master]``` group.
-3. Enter the FQDNs of the machines assigned the role of Kubernetes node in the ```[nodes]``` group.
-4. Edit ```cluster_name``` (this will become the basename of a file used to store the ```admission_token```)
-5. Optionally uncomment and edit ```master_ip_address_configured``` in the ```[master:vars]``` section, if your master machine has multiple interfaces, and the default interface is NOT the interface you want the nodes to use to connect to the master.
+1. Build Dockerfile
+2. Copy ssh key to actuall workspace (see ansible.cfg)
+3. Run docker
+4. Start OSS stack
 
 After you have done this, you should be able to succesfully execute something like this:
 
