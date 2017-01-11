@@ -1,5 +1,4 @@
 cluster_name: devops
 pods_2_install:
  - "https://rawgit.com/kubernetes/dashboard/master/src/deploy/kubernetes-dashboard.yaml"
- - "https://gist.githubusercontent.com/VAdamec/9e62afae323b5d77a56dcab6d5080b17/raw/5d43a091ccdf2f63f712809afff28e9ed8908313/snap_ds.yaml"
  - "https://cloud.weave.works/launch/k8s/weavescope.yaml"
