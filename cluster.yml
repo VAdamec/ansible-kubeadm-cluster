@@ -1,37 +1,72 @@
 ---
+#
+# Create dynamic host groups
+#
+- name: "Create temporary groups based on name"
+  hosts: all
+  gather_facts: true
+  vars_files:
+      - vars.yml
+  tasks:
+
+    - name: Adding dynamic group of masters
+      add_host: name={{ item }} groups=master
+      with_lines: ansible -i ./terraform.py all -m shell -a "hostname" --list -l '~devops-kubestack-master*' | grep 172 | sed -e 's/^[ \t]*//g'
+
+    - name: Adding dynamic group of nodes
+      add_host: name={{ item }} groups=nodes
+      with_lines: ansible -i ./terraform.py all -m shell -a "hostname" --list -l '~devops-kubestack-node*' | grep 172 | sed -e 's/^[ \t]*//g'
+
+    - name: Store Master IP address
+      set_fact:
+        master_ip_address: "{{ hostvars[groups['master'][0]]['ansible_default_ipv4']['address'] }}"
+      run_once: true
+
+    - debug:
+        var: master_ip_address
+      run_once: true
+
+    # Wait for cloudinit finished
+    - name: Wait for cloudinit (install KubeCtl)
+      wait_for:
+        path: /bin/kubeadm
+
+#
+# Create token
+#
 
 - hosts: localhost
   gather_facts: false
-
+  vars_files:
+      - vars.yml
   roles:
-
     - role: admission_token
       tags:
         - token
-
   tasks:
-
     - debug:
         var: admission_token
       tags:
         - token
+#
+# Master
+#
 
-- hosts: "{{ hostvars.localhost.groups.master | join(',') }}"
 
+- hosts: master
   become: true
-
+  vars_files:
+      - vars.yml
   roles:
-
     - role: kubeadm_install
       tags:
         - repo
         - master
-        - nodes          
+        - nodes
 
   tasks:
 
     # Implements Step 2 of http://kubernetes.io/docs/getting-started-guides/kubeadm/
-
     - name: Initialize master
       command: kubeadm init --token {{ hostvars.localhost.admission_token }}
       args:
@@ -45,31 +80,40 @@
     - debug:
         var: master_init.stdout_lines
 
-      # Not 100% sure that the creates clause is correct
+    # Implements Step 3 of http://kubernetes.io/docs/getting-started-guides/kubeadm/
+    - name: Install pod network
+      command: kubectl apply -f https://git.io/weave-kube
+      register: pod_network
+      tags:
+        - master
+        - network
 
-- hosts: "{{ hostvars.localhost.groups.nodes | join(',') }}"
+    - debug:
+        var: pod_network.stdout_lines
 
+    - name: Wait for Kube-DNS pod running
+      shell: "kubectl get pods --all-namespaces | grep kube-dns"
+      register: result
+      until: result.stdout.find("Running") != -1
+      retries: 30
+      delay: 10
+
+#
+# Nodes
+#
+
+- hosts: nodes
   become: true
-
   roles:
-
     - role: kubeadm_install
       tags:
         - repo
         - master
-        - nodes    
+        - nodes
 
   tasks:
 
-    # Implements Step 3 of http://kubernetes.io/docs/getting-started-guides/kubeadm/
-
-    - set_fact:
-        master_ip_address: '{{ master_ip_address_configured }}'
-      when: master_ip_address_configured is defined
-
-    - set_fact:
-        master_ip_address: "{{ hostvars[groups['master'][0]]['ansible_default_ipv4']['address'] }}"
-      when: master_ip_address_configured is not defined
+    # Implements Step 4 of http://kubernetes.io/docs/getting-started-guides/kubeadm/
 
     - name: Join nodes to cluster
       command: kubeadm join --token {{ hostvars.localhost.admission_token }} {{  master_ip_address }}
@@ -84,31 +128,24 @@
     - debug:
         var: node_join.stdout_lines
 
-      # Not 100% sure that the creates clause is correct
+#
+# Postinit
+#
 
-- hosts: "{{ hostvars.localhost.groups.master | join(',') }}"
-
+- hosts: master
   become: true
-
+  vars_files:
+      - vars.yml
   tasks:
 
-    # Implements Step 4 of http://kubernetes.io/docs/getting-started-guides/kubeadm/
-
-    - name: Install pod network
-      command: kubectl apply -f https://git.io/weave-kube
-      register: pod_network
-      tags:
-        - master
-        - network
-
-    - debug:
-        var: pod_network.stdout_lines        
-
-    - name: Copy
-      fetch:
-        src: /etc/kubernetes/admin.conf
-        dest: remotes/{{ hostvars[groups['master'][0]]['cluster_name'] }}.conf
-        flat: true
+    - name: Include fetch of admin.conf
+      include: install_k8s_getadmin.yml
       tags:
         - master
         - remote
+
+    - name: Include system pods installation
+      include: install_k8s_pods.yml
+      tags:
+        - master
+        - pods
