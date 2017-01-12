@@ -1,6 +1,6 @@
 # DON'T USE UNTIL YOU REALY KNOW HOW IT WORKS
 
-# Ansible playbook and roles to create a simple Kubernetes cluster with kubeadm
+# Ansible playbook and roles to create a simple Kubernetes cluster with kubeadm and Terraform on OpenStack
 
 ## Goal
 
@@ -11,10 +11,10 @@ Provide an Ansible playbook that implements the steps described in [Installing K
 This playbook assumes: 
 
 * Access to OpenStack
-* The machines have access to the Internet
+* Access to the Internet
+* Docker or local installation of Terraform and kubectl
 * You are Ansible-knowledgable, can ssh into all the machines, and can sudo with no password prompt
 * Make sure your machines are time-synchronized
-* Deploy via Terraform to OSS
 
 ## Configuration
 
@@ -64,6 +64,10 @@ When you are ready to proceed, run:
 
 ```
     ansible-playbook cluster.yml -i ./terraform.py
+    
+    kubectl --kubeconfig remotes/devops.conf proxy
+
+    open http://localhost:8001/ui/
 ```
 
 This should execute/implement all four installation steps in the aforementioned installation guide.
@@ -80,6 +84,42 @@ If you want to interact with your cluster via the kubectl command on your own ma
 ```
 
 The playbook retrieves the admin.conf file, and stores it locally as ```./remotes/cluster_name.conf``` to facilitate remote kubectl access.
+
+
+## Pods installed by Ansible
+* https://rawgit.com/kubernetes/dashboard/master/src/deploy/kubernetes-dashboard.yaml
+ * enable UI at http://localhost:8001/ui/
+* heapster stack
+ * start metrics grabbing to InfluxDB (visible graphs in UI)
+* https://cloud.weave.works/launch/k8s/weavescope.yaml
+ * UI for weave and k8s/containers overview/dynamic map, to forward port use this command:
+
+```
+kubectl port-forward $(kubectl get pod --selector=weave-scope-component=app -o jsonpath='{.items..metadata.name}') 4040
+ssh -f -N -L 4040:localhost:4040 centos@<MASTER> -i ~/.ssh/terraform.pem
+```
+* Selenium grid
+ * chrome
+ * firefox
+
+
+ ```bash
+ # Get service port
+ $ kubectl get svc selenium-hub
+ NAME           CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE
+ selenium-hub   10.106.233.200   <nodes>       4444:32448/TCP   8m
+
+$ export NODEPORT=`kubectl --kubeconfig remotes/devops.conf get svc --selector='app=selenium-hub' --output=template --template="{{ with index .items 0}}{{with index .spec.ports 0 }}{{.nodePort}}{{end}}{{end}}"`
+$ export NODEIP=`kubectl --kubeconfig remotes/devops.conf describe  nodes devops-kubestack-node-01 | perl -wnE'say for /Addresses:\s*(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\,.*/g'`
+
+# Out of Docker, on your workstation
+$ open http://${NODEIP}:${NODEPORT}
+ ```
+ * Scaling example
+ ```bash
+ $ kubectl scale --replicas=3 rc/selenium-node-chrome
+ $ kubectl scale --replicas=3 rc/selenium-node-firefox
+ ```
 
 ## Idempotency
 
