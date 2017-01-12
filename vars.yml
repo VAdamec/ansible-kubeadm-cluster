@@ -2,3 +2,7 @@ cluster_name: devops
 pods_2_install:
  - "https://rawgit.com/kubernetes/dashboard/master/src/deploy/kubernetes-dashboard.yaml"
  - "https://cloud.weave.works/launch/k8s/weavescope.yaml"
+ - "https://raw.githubusercontent.com/kubernetes/kubernetes/master/examples/selenium/selenium-hub-rc.yaml"
+ - "https://raw.githubusercontent.com/kubernetes/kubernetes/master/examples/selenium/selenium-hub-svc.yaml"
+ - "https://raw.githubusercontent.com/kubernetes/kubernetes/master/examples/selenium/selenium-node-chrome-rc.yaml"
+ - "https://raw.githubusercontent.com/kubernetes/kubernetes/master/examples/selenium/selenium-node-firefox-rc.yaml"
