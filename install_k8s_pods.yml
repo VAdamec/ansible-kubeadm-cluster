@@ -1,9 +1,3 @@
-  - name: Install pods
-    command: kubectl create -f {{ item }}
-    register: pods_install
-    with_items: "{{ pods_2_install | list}}"
-    run_once: true
-
   - name: Install grafana and influxdb
     unarchive:
       src: https://github.com/kubernetes/heapster/archive/v1.3.0-beta.0.zip
@@ -16,3 +10,10 @@
     command: kubectl create -f /tmp/heapster-1.3.0-beta.0/deploy/kube-config/influxdb/ --kubeconfig remotes/devops.conf
     delegate_to: 127.0.0.1
     run_once: true
+
+  - name: Install pods
+    command: kubectl create -f {{ item }}
+    register: pods_install
+    with_items: "{{ pods_2_install | list}}"
+    run_once: true
+    ignore_errors: true
